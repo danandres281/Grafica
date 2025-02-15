@@ -1,0 +1,64 @@
+Sales Date Prediction (Predicción de Fecha de Orden)
+WITH OrderIntervals AS (
+    SELECT 
+        c.CustomerID,
+        c.CustomerName,
+        o.OrderDate,
+        LEAD(o.OrderDate) OVER (PARTITION BY o.CustomerID ORDER BY o.OrderDate) AS NextOrderDate
+    FROM Orders o
+    INNER JOIN Customers c ON o.CustomerID = c.CustomerID
+),
+OrderAverages AS (
+    SELECT 
+        CustomerID,
+        MAX(OrderDate) AS LastOrderDate,
+        AVG(DATEDIFF(DAY, OrderDate, NextOrderDate)) AS AvgDaysBetweenOrders
+    FROM OrderIntervals
+    WHERE NextOrderDate IS NOT NULL
+    GROUP BY CustomerID
+)
+SELECT 
+    c.CustomerName,
+    oa.LastOrderDate,
+    DATEADD(DAY, COALESCE(oa.AvgDaysBetweenOrders, 30), oa.LastOrderDate) AS NextPredictedOrder
+FROM OrderAverages oa
+INNER JOIN Customers c ON oa.CustomerID = c.CustomerID;
+
+
+
+
+Optener ordenes de un cliente
+SELECT 
+    OrderID,
+    RequiredDate,
+    ShippedDate,
+    ShipName,
+    ShipAddress,
+    ShipCity
+FROM Orders
+WHERE CustomerID = @CustomerID;
+
+
+Obtener todos los empleados
+SELECT 
+    EmpID, 
+    FirstName + ' ' + LastName AS FullName
+FROM Employees;
+
+Obtener todos los transportistas
+SELECT 
+    ShipperID,
+    CompanyName
+FROM Shippers;
+
+
+Insertar una nueva orden a los productos
+DECLARE @NewOrderID INT;
+
+INSERT INTO Orders (EmpID, ShipperID, ShipName, ShipAddress, ShipCity, OrderDate, RequiredDate, ShippedDate, Freight, ShipCountry)
+VALUES (1, 2, 'Cliente Ejemplo', 'Calle 123', 'Bogotá', GETDATE(), DATEADD(DAY, 7, GETDATE()), NULL, 10.00, 'Colombia');
+
+SET @NewOrderID = SCOPE_IDENTITY();
+
+INSERT INTO OrderDetails (OrderID, ProductID, UnitPrice, Qty, Discount)
+VALUES (@NewOrderID, 101, 20.50, 3, 0);
