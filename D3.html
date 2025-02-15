@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráfico de Barras con D3.js</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #chart {
+            margin-top: 20px;
+        }
+        input {
+            width: 300px;
+            padding: 5px;
+        }
+        button {
+            padding: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        svg {
+            background: #f8f8f8;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Gráfico de Barras con D3.js</h2>
+
+    <!-- Input para ingresar los datos -->
+    <label for="dataInput">Source Data (números separados por coma):</label><br>
+    <input type="text" id="dataInput" placeholder="Ejemplo: 10, 20, 30, 40, 50">
+    <br>
+    <button onclick="updateChart()">Update Data</button>
+
+    <!-- Contenedor del gráfico -->
+    <div id="chart"></div>
+
+    <script>
+        const width = 600;
+        const height = 400;
+        const colors = ["#ff5733", "#33ff57", "#3357ff", "#ff33a8", "#f3ff33"]; // 5 colores
+
+        // Crear el SVG
+        const svg = d3.select("#chart")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        function updateChart() {
+            const input = document.getElementById("dataInput").value;
+            const data = input.split(",").map(d => parseInt(d.trim())).filter(d => !isNaN(d) && d >= 0);
+
+            if (data.length === 0) {
+                alert("Ingrese valores numéricos enteros separados por coma.");
+                return;
+            }
+
+            // Escalar los datos
+            const xScale = d3.scaleBand()
+                .domain(data.map((_, i) => i))
+                .range([0, width])
+                .padding(0.2);
+
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(data)])
+                .range([height, 0]);
+
+            // Unir los datos con las barras existentes
+            const bars = svg.selectAll("rect")
+                .data(data);
+
+            // Eliminar barras que sobran
+            bars.exit().remove();
+
+            // Agregar nuevas barras
+            bars.enter()
+                .append("rect")
+                .merge(bars) // Unir con las barras existentes
+                .attr("x", (_, i) => xScale(i))
+                .attr("y", d => yScale(d))
+                .attr("width", xScale.bandwidth())
+                .attr("height", d => height - yScale(d))
+                .attr("fill", (_, i) => colors[i % colors.length]); // Asigna color alternado
+
+            // Agregar etiquetas a las barras
+            const labels = svg.selectAll("text")
+                .data(data);
+
+            labels.exit().remove();
+
+            labels.enter()
+                .append("text")
+                .merge(labels)
+                .text(d => d)
+                .attr("x", (_, i) => xScale(i) + xScale.bandwidth() / 2)
+                .attr("y", d => yScale(d) - 5)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#000");
+        }
+    </script>
+
+</body>
+</html>
